@@ -12,14 +12,15 @@ let myRelPoints = [];
 
 function setup() {
     createCanvas(720, 400);
-    softBody = new SoftBody(100, 100, 64);
+    CreateBall()
+    // softBody = new SoftBody(100, 100, 64);
 }
 
-function draw() {
-    background(127);
-    softBody.update();
-    softBody.display();
-}
+// function draw() {
+//     background(127);
+//     softBody.update();
+//     softBody.display();
+// }
 
 class MaterialPoint {
     constructor(x, y, vx, vy, fx, fy) {
@@ -29,7 +30,7 @@ class MaterialPoint {
     }
 }
 
-class LinearPrint {
+class LinearSpring {
     constructor(i, j, length, nx, ny) {
         this.i = i;
         this.j = j;
@@ -42,6 +43,11 @@ class LinearPrint {
 function CreateBall() {
     let i;
 
+    // for(let i = 0; i < NUMP; i++) {
+    //     let point = new MaterialPoint(i * 10, i * 10); // Replace with actual x, y values
+    //     myPoints.push(point);
+    // }
+
     for (i = 0; i < NUMP; i++) {
         myPoints[i].x = BALLRADIUS * Math.sin(i * (2.0 * 3.14) / NUMP);
         myPoints[i].y = BALLRADIUS * Math.cos(i * (2.0 * 3.14) / NUMP) + SCRSIZE / 1
@@ -50,7 +56,8 @@ function CreateBall() {
         AddSpring(i, i, i + 1)
         AddSpring(i - 1, i - 1, 1)
     }
-
+    console.log(myPoints)
+    console.log(mySprings)
 }
 
 // store springs and calculates length of spring and pi to update springs
@@ -164,43 +171,76 @@ function CalculatePressureForce() {
         myPoints[ mySprings[i].j ].fy += 
         mySprings[i].ny * pressurev
     }
+    return pressure
+}
 
 
     // integrate Euler
-    function IntegrateEler()
-    {
-        
-    }
-}
-function mousePressed() {
-    softBody.clicked(mouseX, mouseY);
-}
-
-class SoftBody {
-    constructor(x, y, size) {
-        this.x = x;
-        this.y = y;
-        this.size = size;
-        this.speedX = random(-1, 1);
-        this.speedY = random(-1, 1);
-    }
-
-    update() {
-        this.x += this.speedX;
-        this.y += this.speedY;
-        if (this.x > width || this.x < 0) this.speedX *= -1;
-        if (this.y > height || this.y < 0) this.speedY *= -1;
-    }
-
-    display() {
-        ellipse(this.x, this.y, this.size, this.size);
-    }
-
-    clicked(px, py) {
-        let d = dist(px, py, this.x, this.y);
-        if (d < this.size / 2) {
-            this.speedX = random(-5, 5);
-            this.speedY = random(-5, 5);
+    function IntegrateEuler() {
+        let dry;
+        for(let i = 1; i <= NUMP; ++i) {
+            /* x */
+            myPoints[i].vx = myPoints[i].vx + (myPoints[i].fx / MASS) * DT;
+            myPoints[i].x = myPoints[i].x + myPoints[i].vx * DT;
+            /* y */
+            myPoints[i].vy = myPoints[i].vy + (myPoints[i].fy / MASS) * DT;
+            dry = myPoints[i].vy * DT;
+            /* Boundaries Y */
+            if(myPoints[i].y + dry < -SCRSIZE) {
+                dry = -SCRSIZE - myPoints[i].y;
+                myPoints[i].vy = -0.1 * myPoints[i].vy;
+            }
+            myPoints[i].y = myPoints[i].y + dry;
         }
     }
-}
+
+
+function draw() {
+    background(255); // glClearColor(1,1,1,0);
+    fill(255, 102, 102); // glColor3f(1,0.4,0.4);
+    noStroke();
+    
+    for(let i = 1; i <= NUMS-1; i++) {
+      beginShape(QUADS); // glBegin(GL_QUADS);
+      vertex(myPoints[mySprings[i].i].x, myPoints[mySprings[i].i].y); // glVertex2f(myPoints[ mySprings[i].i ].x, myPoints[ mySprings[i].i ].y);
+      vertex(myPoints[mySprings[i].j].x, myPoints[mySprings[i].j].y); // glVertex2f(myPoints[ mySprings[i].j ].x, myPoints[ mySprings[i].j ].y);
+      vertex(myPoints[NUMP - mySprings[i].i + 1].x, myPoints[NUMP - mySprings[i].i + 1].y); // glVertex2f(myPoints[ NUMP - mySprings[i].i + 1].x, myPoints[ NUMP - mySprings[i].i + 1].y);
+      vertex(myPoints[NUMP - mySprings[i].j + 1].x, myPoints[NUMP - mySprings[i].j + 1].y); // glVertex2f(myPoints[ NUMP - mySprings[i].j + 1].x, myPoints[ NUMP - mySprings[i].j + 1].y);
+      endShape(CLOSE); // glEnd();
+    }
+  }
+
+
+
+// function mousePressed() {
+//     softBody.clicked(mouseX, mouseY);
+// }
+
+// class SoftBody {
+//     constructor(x, y, size) {
+//         this.x = x;
+//         this.y = y;
+//         this.size = size;
+//         this.speedX = random(-1, 1);
+//         this.speedY = random(-1, 1);
+//     }
+
+//     update() {
+//         this.x += this.speedX;
+//         this.y += this.speedY;
+//         if (this.x > width || this.x < 0) this.speedX *= -1;
+//         if (this.y > height || this.y < 0) this.speedY *= -1;
+//     }
+
+//     display() {
+//         ellipse(this.x, this.y, this.size, this.size);
+//     }
+
+//     clicked(px, py) {
+//         let d = dist(px, py, this.x, this.y);
+//         if (d < this.size / 2) {
+//             this.speedX = random(-5, 5);
+//             this.speedY = random(-5, 5);
+//         }
+//     }
+// }
